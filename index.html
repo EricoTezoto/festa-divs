@@ -551,7 +551,9 @@ function pedidoVazio() {
 
 function adicionar(id) {
   pedido[id] = (pedido[id] || 0) + 1;
-  render();
+  patchItem(id);
+  patchTotal();
+  patchResumo();
 }
 
 function remover(id) {
@@ -559,7 +561,47 @@ function remover(id) {
     pedido[id]--;
     if (!pedido[id]) delete pedido[id];
   }
-  render();
+  patchItem(id);
+  patchTotal();
+  patchResumo();
+}
+
+// Atualiza cirurgicamente a célula do item — sem tocar no scroll-area
+function patchItem(id) {
+  const qty  = pedido[id] || 0;
+  const cell = document.getElementById('cell-' + id);
+  if (!cell) return;
+
+  if (qty > 0) cell.classList.add('ativo');
+  else         cell.classList.remove('ativo');
+
+  let badge = document.getElementById('badge-' + id);
+  if (qty > 0) {
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.id = 'badge-' + id;
+      badge.className = 'item-badge';
+      cell.insertBefore(badge, document.getElementById('minus-' + id));
+    }
+    badge.textContent = '×' + qty;
+  } else {
+    if (badge) badge.remove();
+  }
+
+  const minus = document.getElementById('minus-' + id);
+  if (minus) minus.style.visibility = qty > 0 ? '' : 'hidden';
+}
+
+function patchTotal() {
+  const el = document.getElementById('total-value');
+  if (el) el.textContent = brl(totalPedido());
+  const btn = document.getElementById('btn-cobrar');
+  if (btn) btn.disabled = pedidoVazio();
+}
+
+function patchResumo() {
+  const el = document.getElementById('resumo');
+  if (el) el.innerHTML = renderResumo();
 }
 
 function limparConta() {
@@ -679,13 +721,13 @@ function renderGrade(itens) {
   return itens.map(it => {
     const qty   = pedido[it.id] || 0;
     const ativo = qty > 0;
-    return `<div class="item-cell${ativo ? ' ativo' : ''}">
+    return `<div class="item-cell${ativo ? ' ativo' : ''}" id="cell-${it.id}">
   <button class="item-btn" onclick="adicionar('${it.id}')">
     <span class="item-nome">${it.nome}</span>
     <span class="item-preco">${brl(it.preco)}</span>
   </button>
-  ${ativo ? `<span class="item-badge">×${qty}</span>` : ''}
-  <button class="item-minus"
+  ${ativo ? `<span class="item-badge" id="badge-${it.id}">×${qty}</span>` : ''}
+  <button class="item-minus" id="minus-${it.id}"
     onclick="remover('${it.id}')"
     style="${ativo ? '' : 'visibility:hidden'}"
     aria-label="Remover 1 ${it.nome}">−</button>
@@ -711,7 +753,7 @@ function renderCaixa() {
   return `${renderNav('caixa')}
 <div class="total-bar">
   <div class="total-label">Total do pedido</div>
-  <div class="total-value">${brl(totalPedido())}</div>
+  <div class="total-value" id="total-value">${brl(totalPedido())}</div>
 </div>
 <div class="scroll-area">
   <div class="section-title">Comidas</div>
@@ -719,11 +761,11 @@ function renderCaixa() {
   <div class="section-title">Bebidas</div>
   <div class="item-grid">${renderGrade(BEBIDAS)}</div>
 </div>
-<div class="resumo">${renderResumo()}</div>
+<div class="resumo" id="resumo">${renderResumo()}</div>
 <div class="acoes">
   <div class="acoes-row">
     <button class="btn btn-sec" onclick="limparConta()">Limpar conta</button>
-    <button class="btn btn-prim" onclick="irPagar()"${pedidoVazio() ? ' disabled' : ''}>Cobrar →</button>
+    <button class="btn btn-prim" id="btn-cobrar" onclick="irPagar()"${pedidoVazio() ? ' disabled' : ''}>Cobrar →</button>
   </div>
   <div class="acoes-nota">Limpar conta apaga apenas o pedido atual — o fechamento do dia não é afetado</div>
 </div>`;
