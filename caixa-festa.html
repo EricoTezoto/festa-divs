@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Caixa Junina">
+<title>Caixa — Festa Junina</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #fcebd2;
+  --bg2:      #f0d5b0;
+  --accent:   #a33200;
+  --green:    #1e6b1e;
+  --blue:     #1a4f8b;
+  --text:     #1a1a1a;
+  --muted:    #6b6b6b;
+  --radius:   12px;
+  --safe-t:   env(safe-area-inset-top,    0px);
+  --safe-b:   env(safe-area-inset-bottom, 0px);
+  --safe-l:   env(safe-area-inset-left,   0px);
+  --safe-r:   env(safe-area-inset-right,  0px);
+}
+
+html, body {
+  height: 100%;
+  background: var(--accent);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 500px;
+  margin: 0 auto;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+/* ── NAV ─────────────────────────────────────────────────────── */
+
+nav {
+  display: flex;
+  background: var(--accent);
+  padding-top: var(--safe-t);
+  flex-shrink: 0;
+}
+
+nav button {
+  flex: 1;
+  padding: 14px 8px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: rgba(255,255,255,0.5);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+}
+
+nav button.ativo {
+  color: white;
+  border-bottom-color: white;
+}
+
+/* ── TOTAL HEADER ────────────────────────────────────────────── */
+
+.total-bar {
+  background: var(--accent);
+  color: white;
+  text-align: center;
+  padding: 4px 16px 14px;
+  flex-shrink: 0;
+}
+
+.total-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.total-value {
+  font-size: 52px;
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+  /* Strong visual separation — this number must pop */
+  text-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+/* ── SCROLL AREA ─────────────────────────────────────────────── */
+
+.scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px 10px 4px;
+}
+
+.section-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 10px 2px 6px;
+}
+
+/* ── ITEM GRID ───────────────────────────────────────────────── */
+
+.item-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.item-cell {
+  position: relative;
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  overflow: hidden;
+}
+
+.item-cell.ativo {
+  background: #fff5ee;
+  box-shadow: 0 1px 4px rgba(163,50,0,0.2), inset 0 0 0 1.5px rgba(163,50,0,0.15);
+}
+
+/* Large tappable add zone */
+.item-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  padding: 12px 38px 12px 12px;
+  min-height: 70px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.item-btn:active { background: rgba(0,0,0,0.05); }
+
+.item-nome {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.item-preco {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.item-badge {
+  position: absolute;
+  top: 6px;
+  right: 32px;
+  background: var(--accent);
+  color: white;
+  font-size: 11px;
+  font-weight: 800;
+  border-radius: 8px;
+  padding: 2px 6px;
+  min-width: 20px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.item-minus {
+  position: absolute;
+  top: 50%;
+  right: 7px;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  background: var(--bg2);
+  border: none;
+  border-radius: 50%;
+  font-size: 22px;
+  font-weight: 300;
+  color: var(--accent);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.item-minus:active { background: #d9bc92; }
+
+/* ── ORDER SUMMARY ───────────────────────────────────────────── */
+
+.resumo {
+  background: var(--bg2);
+  border-top: 1px solid #d9c09a;
+  max-height: 108px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 7px 12px;
+  flex-shrink: 0;
+}
+
+.resumo-linha {
+  font-size: 13px;
+  color: var(--text);
+  padding: 3px 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.resumo-vazio {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  padding: 5px 0;
+}
+
+/* ── BOTTOM ACTIONS ──────────────────────────────────────────── */
+
+.acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 10px 12px;
+  padding-bottom: calc(8px + var(--safe-b));
+  background: var(--bg);
+  border-top: 1px solid #d9c09a;
+  flex-shrink: 0;
+}
+
+.acoes-row {
+  display: flex;
+  gap: 8px;
+}
+
+.acoes-nota {
+  font-size: 10px;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 5px;
+  letter-spacing: 0.2px;
+}
+
+/* ── BUTTONS ─────────────────────────────────────────────────── */
+
+.btn {
+  flex: 1;
+  padding: 16px;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active { opacity: 0.72; }
+.btn:disabled { opacity: 0.32; cursor: default; }
+
+.btn-sec   { background: var(--bg2);    color: var(--text); }
+.btn-prim  { background: var(--accent); color: white; }
+.btn-verde { background: var(--green);  color: white; }
+.btn-azul  { background: var(--blue);   color: white; }
+
+/* ── PAYMENT SCREEN ──────────────────────────────────────────── */
+
+.pay-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.pay-header {
+  background: var(--accent);
+  color: white;
+  text-align: center;
+  padding-top: calc(var(--safe-t) + 14px);
+  padding-bottom: 16px;
+  padding-left: var(--safe-l);
+  padding-right: var(--safe-r);
+  flex-shrink: 0;
+}
+
+.pay-header-label {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  opacity: 0.72;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.pay-header-total {
+  font-size: 56px;
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  line-height: 1.05;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+.pay-body {
+  flex: 1;
+  padding: 20px 16px;
+  padding-bottom: calc(20px + var(--safe-b));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.btn-method {
+  padding: 22px 16px;
+  border: none;
+  border-radius: 16px;
+  font-size: 20px;
+  font-weight: 800;
+  cursor: pointer;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-method:active { opacity: 0.78; }
+.btn-dinheiro { background: var(--green); color: white; }
+.btn-cartao   { background: var(--blue);  color: white; }
+
+/* Dinheiro: valor input */
+.valor-input {
+  width: 100%;
+  padding: 14px;
+  font-size: 36px;
+  font-weight: 800;
+  text-align: center;
+  border: 2px solid var(--bg2);
+  border-radius: var(--radius);
+  background: white;
+  color: var(--text);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.valor-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Troco / Falta box */
+.troco-box {
+  background: white;
+  border-radius: var(--radius);
+  padding: 14px 12px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.troco-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.troco-valor {
+  font-size: 44px;
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -1px;
+}
+
+/* These numbers must stand out strongly */
+.troco-ok  { color: var(--green);  }
+.troco-neg { color: var(--accent); }
+.troco-neu { color: #c0b0a0; }
+
+.cartao-info {
+  text-align: center;
+  padding: 20px 8px;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.6;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── FECHAMENTO ──────────────────────────────────────────────── */
+
+.fech-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.fech-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px 12px;
+  padding-bottom: calc(12px + var(--safe-b));
+}
+
+.card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+
+.card-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.fech-total-geral {
+  font-size: 48px;
+  font-weight: 900;
+  color: var(--accent);
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+}
+
+.fech-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--bg2);
+}
+
+.fech-row:last-child { border-bottom: none; }
+
+.fech-row-nome { font-size: 14px; color: var(--text); }
+.fech-row-sub  { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.fech-row-val  { font-size: 14px; font-weight: 700; color: var(--text); }
+
+.empty-msg {
+  text-align: center;
+  color: var(--muted);
+  font-size: 15px;
+  padding: 50px 20px;
+  line-height: 1.6;
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ================================================================
+//  LISTA DE ITENS E PREÇOS
+//  Edite aqui para mudar nomes, preços ou adicionar/remover itens.
+//  Cada item: { id: 'chave_unica', nome: 'Nome no botão', preco: 0.00 }
+// ================================================================
+
+const COMIDAS = [
+  { id: 'pastel',       nome: 'Pastel',         preco: 10.00 },
+  { id: 'torta',        nome: 'Torta',          preco: 10.00 },
+  { id: 'pizza',        nome: 'Pizza',          preco:  9.00 },
+  { id: 'cuscuz',       nome: 'Cuscuz',         preco:  8.00 },
+  { id: 'pao_queijo',   nome: 'Pão de queijo',  preco:  8.00 },
+  { id: 'nuggets',      nome: 'Nuggets',        preco: 10.00 },
+  { id: 'batata_frita', nome: 'Batata frita',   preco: 16.00 },
+];
+
+const BEBIDAS = [
+  { id: 'vinho_quente', nome: 'Vinho quente',     preco: 10.00 },
+  { id: 'quentao',      nome: 'Quentão',          preco: 10.00 },
+  { id: 'choc_quente',  nome: 'Chocolate quente', preco: 10.00 },
+  { id: 'cafe',         nome: 'Café',             preco:  8.00 },
+  { id: 'cha',          nome: 'Chá',              preco:  5.00 },
+];
+
+// ================================================================
+
+const TODOS = [...COMIDAS, ...BEBIDAS];
+const STORAGE_KEY = 'caixa_festa_junina_v1';
+
+// ── Estado ──────────────────────────────────────────────────────
+
+let tela      = 'caixa';    // 'caixa' | 'pagamento' | 'fechamento'
+let payStep   = 'escolha';  // 'escolha' | 'dinheiro' | 'cartao'
+let pedido    = {};          // { [id]: qty } — só memória, não persiste
+let valorPago = '';          // string do campo de dinheiro
+let vendas    = carregarVendas();
+
+// ── Persistência ─────────────────────────────────────────────────
+
+function carregarVendas() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch (_) { return []; }
+}
+
+function salvarVendas() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vendas)); }
+  catch (_) {}
+}
+
+// ── Utilitários ──────────────────────────────────────────────────
+
+function brl(n) {
+  return 'R$ ' + n.toFixed(2).replace('.', ',');
+}
+
+function parseValor(str) {
+  return parseFloat((str || '').replace(',', '.')) || 0;
+}
+
+function totalPedido() {
+  return TODOS.reduce((s, it) => s + (pedido[it.id] || 0) * it.preco, 0);
+}
+
+function pedidoVazio() {
+  return !Object.values(pedido).some(q => q > 0);
+}
+
+// ── Ações ────────────────────────────────────────────────────────
+
+function adicionar(id) {
+  pedido[id] = (pedido[id] || 0) + 1;
+  render();
+}
+
+function remover(id) {
+  if ((pedido[id] || 0) > 0) {
+    pedido[id]--;
+    if (!pedido[id]) delete pedido[id];
+  }
+  render();
+}
+
+function limparConta() {
+  pedido    = {};
+  valorPago = '';
+  render();
+}
+
+function irPagar() {
+  tela      = 'pagamento';
+  payStep   = 'escolha';
+  valorPago = '';
+  render();
+}
+
+function irCaixa() {
+  tela = 'caixa';
+  render();
+}
+
+function irFechamento() {
+  tela = 'fechamento';
+  render();
+}
+
+function escolherDinheiro() {
+  payStep   = 'dinheiro';
+  valorPago = '';
+  render();
+  setTimeout(() => {
+    const el = document.getElementById('inp-valor');
+    if (el) { el.focus(); }
+  }, 80);
+}
+
+function escolherCartao() {
+  payStep = 'cartao';
+  render();
+}
+
+function finalizar(metodo) {
+  const total = totalPedido();
+  const pago  = parseValor(valorPago);
+
+  const itensVenda = TODOS
+    .filter(it => (pedido[it.id] || 0) > 0)
+    .map(it => ({
+      id:       it.id,
+      nome:     it.nome,
+      qty:      pedido[it.id],
+      preco:    it.preco,
+      subtotal: it.preco * pedido[it.id],
+    }));
+
+  vendas.push({
+    ts:    Date.now(),
+    metodo,
+    total,
+    pago:  metodo === 'dinheiro' ? pago : total,
+    troco: metodo === 'dinheiro' ? Math.max(0, pago - total) : 0,
+    itens: itensVenda,
+  });
+
+  salvarVendas();
+  pedido    = {};
+  valorPago = '';
+  tela      = 'caixa';
+  render();
+}
+
+// Atualização parcial do troco — não re-renderiza a tela toda
+// para não perder o foco/cursor no input de valor
+function onValorChange(val) {
+  valorPago = val;
+  const total = totalPedido();
+  const pago  = parseValor(val);
+  const troco = pago - total;
+
+  const box    = document.getElementById('troco-box');
+  const btnFin = document.getElementById('btn-fin-din');
+
+  if (box) {
+    if (!val || pago === 0) {
+      box.innerHTML = `<div class="troco-label">Troco</div>
+        <div class="troco-valor troco-neu">—</div>`;
+    } else if (troco >= 0) {
+      box.innerHTML = `<div class="troco-label">Troco</div>
+        <div class="troco-valor troco-ok">${brl(troco)}</div>`;
+    } else {
+      box.innerHTML = `<div class="troco-label">Falta</div>
+        <div class="troco-valor troco-neg">${brl(-troco)}</div>`;
+    }
+  }
+
+  if (btnFin) btnFin.disabled = !(pago >= total && pago > 0);
+}
+
+// ── Render ───────────────────────────────────────────────────────
+
+function render() {
+  const app = document.getElementById('app');
+  if      (tela === 'caixa')      app.innerHTML = renderCaixa();
+  else if (tela === 'pagamento')  app.innerHTML = renderPagamento();
+  else if (tela === 'fechamento') app.innerHTML = renderFechamento();
+}
+
+function renderNav(telaAtual) {
+  return `<nav>
+  <button class="${telaAtual === 'caixa' ? 'ativo' : ''}" onclick="irCaixa()">Caixa</button>
+  <button class="${telaAtual === 'fechamento' ? 'ativo' : ''}" onclick="irFechamento()">Fechamento</button>
+</nav>`;
+}
+
+// ── Caixa ────────────────────────────────────────────────────────
+
+function renderGrade(itens) {
+  return itens.map(it => {
+    const qty   = pedido[it.id] || 0;
+    const ativo = qty > 0;
+    return `<div class="item-cell${ativo ? ' ativo' : ''}">
+  <button class="item-btn" onclick="adicionar('${it.id}')">
+    <span class="item-nome">${it.nome}</span>
+    <span class="item-preco">${brl(it.preco)}</span>
+  </button>
+  ${ativo ? `<span class="item-badge">×${qty}</span>` : ''}
+  <button class="item-minus"
+    onclick="remover('${it.id}')"
+    style="${ativo ? '' : 'visibility:hidden'}"
+    aria-label="Remover 1 ${it.nome}">−</button>
+</div>`;
+  }).join('');
+}
+
+function renderResumo() {
+  const linhas = TODOS.filter(it => (pedido[it.id] || 0) > 0);
+  if (!linhas.length) {
+    return `<div class="resumo-vazio">Pedido vazio — toque nos itens acima</div>`;
+  }
+  return linhas.map(it => {
+    const q = pedido[it.id];
+    return `<div class="resumo-linha">
+  <span>${q}× ${it.nome}</span>
+  <span>${brl(q * it.preco)}</span>
+</div>`;
+  }).join('');
+}
+
+function renderCaixa() {
+  return `${renderNav('caixa')}
+<div class="total-bar">
+  <div class="total-label">Total do pedido</div>
+  <div class="total-value">${brl(totalPedido())}</div>
+</div>
+<div class="scroll-area">
+  <div class="section-title">Comidas</div>
+  <div class="item-grid">${renderGrade(COMIDAS)}</div>
+  <div class="section-title">Bebidas</div>
+  <div class="item-grid">${renderGrade(BEBIDAS)}</div>
+</div>
+<div class="resumo">${renderResumo()}</div>
+<div class="acoes">
+  <div class="acoes-row">
+    <button class="btn btn-sec" onclick="limparConta()">Limpar conta</button>
+    <button class="btn btn-prim" onclick="irPagar()"${pedidoVazio() ? ' disabled' : ''}>Cobrar →</button>
+  </div>
+  <div class="acoes-nota">Limpar conta apaga apenas o pedido atual — o fechamento do dia não é afetado</div>
+</div>`;
+}
+
+// ── Pagamento ────────────────────────────────────────────────────
+
+function renderPagamento() {
+  const total = totalPedido();
+
+  if (payStep === 'escolha') {
+    return `<div class="pay-wrap">
+  <div class="pay-header">
+    <div class="pay-header-label">Total a pagar</div>
+    <div class="pay-header-total">${brl(total)}</div>
+  </div>
+  <div class="pay-body">
+    <button class="btn-method btn-dinheiro" onclick="escolherDinheiro()">💵  Dinheiro</button>
+    <button class="btn-method btn-cartao"   onclick="escolherCartao()">💳  Cartão</button>
+    <button class="btn btn-sec" style="margin-top:auto" onclick="irCaixa()">← Voltar ao pedido</button>
+  </div>
+</div>`;
+  }
+
+  if (payStep === 'cartao') {
+    return `<div class="pay-wrap">
+  <div class="pay-header">
+    <div class="pay-header-label">💳 Cartão — total a cobrar</div>
+    <div class="pay-header-total">${brl(total)}</div>
+  </div>
+  <div class="pay-body">
+    <div class="cartao-info">Passe ou aproxime o cartão<br>na maquininha.</div>
+    <button class="btn btn-verde" onclick="finalizar('cartao')">✓  Confirmar pagamento</button>
+    <button class="btn btn-sec" onclick="irPagar()">← Voltar</button>
+  </div>
+</div>`;
+  }
+
+  if (payStep === 'dinheiro') {
+    const pago   = parseValor(valorPago);
+    const troco  = pago - total;
+    const canFin = pago >= total && pago > 0;
+
+    let trocoHtml;
+    if (!valorPago || pago === 0) {
+      trocoHtml = `<div class="troco-label">Troco</div>
+        <div class="troco-valor troco-neu">—</div>`;
+    } else if (troco >= 0) {
+      trocoHtml = `<div class="troco-label">Troco</div>
+        <div class="troco-valor troco-ok">${brl(troco)}</div>`;
+    } else {
+      trocoHtml = `<div class="troco-label">Falta</div>
+        <div class="troco-valor troco-neg">${brl(-troco)}</div>`;
+    }
+
+    return `<div class="pay-wrap">
+  <div class="pay-header">
+    <div class="pay-header-label">💵 Dinheiro — total a pagar</div>
+    <div class="pay-header-total">${brl(total)}</div>
+  </div>
+  <div class="pay-body">
+    <label style="font-size:12px;font-weight:800;letter-spacing:1px;color:var(--muted);text-transform:uppercase">Valor recebido</label>
+    <input
+      id="inp-valor"
+      class="valor-input"
+      type="text"
+      inputmode="decimal"
+      placeholder="0,00"
+      value="${valorPago}"
+      oninput="onValorChange(this.value)"
+      autocomplete="off"
+      autocorrect="off"
+    >
+    <div id="troco-box" class="troco-box">${trocoHtml}</div>
+    <button id="btn-fin-din" class="btn btn-verde" onclick="finalizar('dinheiro')"${canFin ? '' : ' disabled'}>✓  Confirmar pagamento</button>
+    <button class="btn btn-sec" onclick="irPagar()">← Voltar</button>
+  </div>
+</div>`;
+  }
+}
+
+// ── Fechamento ───────────────────────────────────────────────────
+
+function renderFechamento() {
+  const total    = vendas.reduce((s, v) => s + v.total, 0);
+  const dinheiro = vendas.filter(v => v.metodo === 'dinheiro').reduce((s, v) => s + v.total, 0);
+  const cartao   = vendas.filter(v => v.metodo === 'cartao').reduce((s, v) => s + v.total, 0);
+  const nVendas  = vendas.length;
+
+  // Soma por item
+  const mapa = {};
+  for (const it of TODOS) {
+    mapa[it.id] = { nome: it.nome, preco: it.preco, qty: 0, subtotal: 0 };
+  }
+  for (const v of vendas) {
+    for (const si of v.itens) {
+      if (mapa[si.id]) {
+        mapa[si.id].qty      += si.qty;
+        mapa[si.id].subtotal += si.subtotal;
+      }
+    }
+  }
+
+  const linhasItens = TODOS
+    .filter(it => mapa[it.id].qty > 0)
+    .map(it => {
+      const d = mapa[it.id];
+      return `<div class="fech-row">
+  <div>
+    <div class="fech-row-nome">${d.nome}</div>
+    <div class="fech-row-sub">${d.qty} un. × ${brl(d.preco)}</div>
+  </div>
+  <div class="fech-row-val">${brl(d.subtotal)}</div>
+</div>`;
+    }).join('');
+
+  const temVendas = nVendas > 0;
+
+  return `${renderNav('fechamento')}
+<div class="fech-wrap">
+  <div class="fech-body">
+    ${temVendas ? `
+    <div class="card">
+      <div class="card-title">Total do dia</div>
+      <div class="fech-total-geral">${brl(total)}</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Por forma de pagamento</div>
+      <div class="fech-row">
+        <div class="fech-row-nome">Dinheiro</div>
+        <div class="fech-row-val">${brl(dinheiro)}</div>
+      </div>
+      <div class="fech-row">
+        <div class="fech-row-nome">Cartão</div>
+        <div class="fech-row-val">${brl(cartao)}</div>
+      </div>
+      <div class="fech-row">
+        <div class="fech-row-nome">Clientes atendidos</div>
+        <div class="fech-row-val">${nVendas}</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Por item</div>
+      ${linhasItens}
+    </div>` : `
+    <div class="empty-msg">
+      Nenhuma venda registrada ainda.<br>As vendas do dia aparecerão aqui.
+    </div>`}
+  </div>
+</div>`;
+}
+
+// ── Init ─────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
